@@ -1,0 +1,185 @@
+﻿<UserControl
+  x:Class="PacMan.View.PacManView"
+  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+  xmlns:local="clr-namespace:PacMan.View"
+  xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+  d:DesignHeight="450"
+  d:DesignWidth="800"
+  Background="Black"
+  mc:Ignorable="d">
+  <UserControl.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.Shadows.xaml" />
+        <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.Button.xaml" />
+      </ResourceDictionary.MergedDictionaries>
+      <!--<converter:IntToStringConverter x:Key="IntToStringConverter" />-->
+
+      <Style x:Key="NoItemHighlight" TargetType="{x:Type ListBoxItem}">
+        <Setter Property="Template">
+          <Setter.Value>
+            <ControlTemplate TargetType="{x:Type ListBoxItem}">
+              <ContentPresenter />
+            </ControlTemplate>
+          </Setter.Value>
+        </Setter>
+      </Style>
+
+      <Style x:Key="ListBoxItemStyle" TargetType="{x:Type ListBoxItem}">
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Setter Property="HorizontalContentAlignment" Value="{Binding HorizontalContentAlignment, RelativeSource={RelativeSource AncestorType={x:Type ItemsControl}}}" />
+        <Setter Property="VerticalContentAlignment" Value="{Binding VerticalContentAlignment, RelativeSource={RelativeSource AncestorType={x:Type ItemsControl}}}" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="Margin" Value="0,-3" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Template">
+          <Setter.Value>
+            <ControlTemplate TargetType="{x:Type ListBoxItem}">
+              <Border
+                x:Name="Bd"
+                Padding="{TemplateBinding Padding}"
+                Background="{TemplateBinding Background}"
+                BorderBrush="{TemplateBinding BorderBrush}"
+                BorderThickness="{TemplateBinding BorderThickness}"
+                SnapsToDevicePixels="true">
+                <ContentPresenter
+                  HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                  VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                  SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" />
+              </Border>
+              <ControlTemplate.Triggers>
+                <Trigger Property="IsEnabled" Value="False">
+                  <Setter TargetName="Bd" Property="TextElement.Foreground" Value="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}" />
+                </Trigger>
+              </ControlTemplate.Triggers>
+            </ControlTemplate>
+          </Setter.Value>
+        </Setter>
+      </Style>
+    </ResourceDictionary>
+  </UserControl.Resources>
+
+  <Grid>
+    <ListBox
+      Name="OuterListBox"
+      Grid.Row="2"
+      HorizontalAlignment="Center"
+      VerticalAlignment="Center"
+      Background="Transparent"
+      BorderThickness="0"
+      Focusable="False"
+      ItemContainerStyle="{StaticResource ListBoxItemStyle}"
+      ItemsSource="{Binding Path=Board}">
+      <ListBox.ItemTemplate>
+        <DataTemplate>
+          <ListBox
+            x:Name="InnerListBox"
+            Margin="0"
+            Background="Transparent"
+            BorderThickness="0"
+            Focusable="False"
+            ItemContainerStyle="{StaticResource NoItemHighlight}"
+            ItemsSource="{Binding}">
+            <ListBox.ItemsPanel>
+              <ItemsPanelTemplate>
+                <VirtualizingStackPanel HorizontalAlignment="Stretch" Orientation="Horizontal" />
+              </ItemsPanelTemplate>
+            </ListBox.ItemsPanel>
+            <ListBox.ItemTemplate>
+              <DataTemplate>
+                <Border
+                  Width="{Binding Width}"
+                  Height="{Binding Height}"
+                  Background="{Binding Background}"
+                  BorderBrush="DarkBlue"
+                  BorderThickness="{Binding BorderThickness}"
+                  CornerRadius="{Binding CornerRadius}">
+                  <Grid>
+
+                    <Image
+                      Width="30"
+                      Height="30"
+                      HorizontalAlignment="Center"
+                      VerticalAlignment="Center"
+                      Panel.ZIndex="1"
+                      RenderTransformOrigin=".5,.5"
+                      Source="pack://application:,,,/PacMan;component/Resources/pacman.png"
+                      Visibility="{Binding PacmanVisibility}">
+                      <Image.RenderTransform>
+                        <RotateTransform Angle="{Binding Angle}" />
+                      </Image.RenderTransform>
+                    </Image>
+
+
+                    <Image
+                      Width="30"
+                      Height="30"
+                      HorizontalAlignment="Center"
+                      VerticalAlignment="Center"
+                      Panel.ZIndex="2"
+                      RenderTransformOrigin=".5,.5"
+                      Source="pack://application:,,,/PacMan;component/Resources/blue_ghost.png"
+                      Visibility="{Binding BlueGhostVisibility}" />
+
+
+                    <Image
+                      Width="30"
+                      Height="30"
+                      HorizontalAlignment="Center"
+                      VerticalAlignment="Center"
+                      Panel.ZIndex="3"
+                      RenderTransformOrigin=".5,.5"
+                      Source="pack://application:,,,/PacMan;component/Resources/orange_ghost.png"
+                      Visibility="{Binding OrangeGhostVisibility}" />
+
+
+                    <Image
+                      Width="30"
+                      Height="30"
+                      HorizontalAlignment="Center"
+                      VerticalAlignment="Center"
+                      Panel.ZIndex="4"
+                      RenderTransformOrigin=".5,.5"
+                      Source="pack://application:,,,/PacMan;component/Resources/pink_ghost.png"
+                      Visibility="{Binding PinkGhostVisibility}" />
+
+
+                    <Image
+                      Width="30"
+                      Height="30"
+                      HorizontalAlignment="Center"
+                      VerticalAlignment="Center"
+                      Panel.ZIndex="5"
+                      RenderTransformOrigin=".5,.5"
+                      Source="pack://application:,,,/PacMan;component/Resources/red_ghost.png"
+                      Visibility="{Binding RedGhostVisibility}" />
+
+
+                    <Rectangle
+                      Width="{Binding YellowDotSize}"
+                      Height="{Binding YellowDotSize}"
+                      HorizontalAlignment="Center"
+                      VerticalAlignment="Center"
+                      Panel.ZIndex="0"
+                      Fill="#ecae8a"
+                      RadiusX="{Binding YellowDotRadius}"
+                      RadiusY="{Binding YellowDotRadius}"
+                      Visibility="{Binding YellowDotVisibility}" />
+
+                  </Grid>
+                </Border>
+
+
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+    </ListBox>
+  </Grid>
+</UserControl>
