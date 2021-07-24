@@ -1,19 +1,15 @@
-﻿using PacMan.ViewModel;
+﻿using PacMan.Model;
+using PacMan.ViewModel;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+using System.Media;
+using System.Reflection;
 using System.Threading.Tasks;
 using System.Timers;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace PacMan
 {
@@ -23,6 +19,12 @@ namespace PacMan
   public partial class MainWindow : Window
   {
     private Timer timer;
+    private Dictionary<Key, Coordinates> directionOffset;
+    private PacManViewModel PacManViewModel;
+    private Key LastKey = Key.Right;
+    private Key CurrentKey = Key.None;
+    private Dictionary<Key, Key> oppositeDirection;
+    private Timer soundTimer;
 
     public MainWindow()
     {
@@ -30,76 +32,119 @@ namespace PacMan
       PacManViewModel = new PacManViewModel();
       PacManView.DataContext = PacManViewModel;
 
-      timer = new Timer(500);
+      timer = new Timer(300);
       timer.Elapsed += async (sender, e) => await HandleTimer();
 
+      soundTimer = new Timer(800);
+      soundTimer.Elapsed += async (sender, e) => await HandleSoundTimer();
+
+      directionOffset = new Dictionary<Key, Coordinates>();
+      directionOffset.Add(Key.Down, new Coordinates(1, 0));
+      directionOffset.Add(Key.Up, new Coordinates(-1, 0));
+      directionOffset.Add(Key.Left, new Coordinates(0, -1));
+      directionOffset.Add(Key.Right, new Coordinates(0, 1));
+
+      oppositeDirection = new Dictionary<Key, Key>();
+      oppositeDirection.Add(Key.None, Key.None);
+      oppositeDirection.Add(Key.Down, Key.Up);
+      oppositeDirection.Add(Key.Up, Key.Down);
+      oppositeDirection.Add(Key.Left, Key.Right);
+      oppositeDirection.Add(Key.Right, Key.Left);
+
+      PacManViewModel.DirectionOffset = directionOffset;
+      PacManViewModel.Timer = timer;
+      PacManViewModel.GameOver = PacManView.GameOver;
     }
 
-    public Key LastKey { get; private set; } = Key.None;
-    internal PacManViewModel PacManViewModel { get; }
-
-    private async Task HandleTimer()
+    private async Task HandleSoundTimer()
     {
       await Task.Run(() =>
       {
-        MovePacman();
-        MoveGhosts();
-
+        Application.Current.Dispatcher.Invoke((Action)delegate
+        {
+          if (PacManViewModel.PacmanHasChomped)
+          {
+            //PlaySound("chomp");
+          }
+        });
       });
+    }
+
+    private async Task HandleTimer()
+    {
+
+      await Task.Run(() =>
+      {
+        Application.Current.Dispatcher.Invoke((Action)delegate
+        {
+          MovePacman();
+          MoveGhosts();
+        });
+      });
+
+
     }
 
     private void MoveGhosts()
     {
-      MoveGhost(PacManViewModel.BlueGhostCoordinates, 0);
-      MoveGhost(PacManViewModel.OrangeGhostCoordinates, 1);
-      MoveGhost(PacManViewModel.PinkGhostCoordinates, 2);
-      MoveGhost(PacManViewModel.RedGhostCoordinates, 3);
+      if (true)
+      {
+        int bkp = 0;
+      }
+      foreach (var ghost in PacManViewModel.Ghosts)
+      {
+        MoveGhost(ghost);
+      }
+      if (PacManViewModel.Ghosts[1].Coordinates == PacManViewModel.Ghosts[2].Coordinates || PacManViewModel.Ghosts[1].Coordinates == PacManViewModel.Ghosts[3].Coordinates
+        || PacManViewModel.Ghosts[1].Coordinates == PacManViewModel.Ghosts[0].Coordinates)
+      {
+        int bkp = 0;
+        //timer.Stop();
+      }
     }
-    Coordinates BluePreviousCoordinates = new Coordinates(0, 0);
-    Coordinates OrangePreviousCoordinates = new Coordinates(0, 0);
-    Coordinates PinkPreviousCoordinates = new Coordinates(0, 0);
-    Coordinates RedPreviousCoordinates = new Coordinates(0, 0);
-    private void MoveGhost(Coordinates ghostCoordinates, int ghost)
+
+
+    private void MoveGhost(Ghost ghost)
     {
-      var x = new List<int> { -1, 1, 0, 0 };
-      var y = new List<int> { 0, 0, -1, 1 };
+      var allDirections = new List<Key> { Key.Up, Key.Down, Key.Left, Key.Right };
 
-      var ghostCoord = PacManViewModel.GetGhostCoordinates(ghost);
-
-      var indexList = new List<int>();
+      var availableDirections = new List<Key>();
       for (int i = 0; i < 4; i++)
       {
-        int x2 = x[i] + ghostCoord.x;
-        int y2 = y[i] + ghostCoord.y;
-        bool isBorder = PacManViewModel.Borders.Any(c => c.x == x2 && c.y == y2);
-        Coordinates previousCoordinates = new Coordinates(GetPrevCoordinates(ghost));
-        bool currentEqualsPrev = previousCoordinates.x == x2 && previousCoordinates.y == y2;
-        bool isMargin = x2 < 1 || x2 >= PacManViewModel.N || y2 < 1 || y2 >= PacManViewModel.M;
-        bool isPortal = x2 == PacManViewModel.N / 2 - 1 && y2 <=4 || y2 >= PacManViewModel.M - 4;
+        int x2 = directionOffset[allDirections[i]].x + ghost.Coordinates.x;
+        int y2 = directionOffset[allDirections[i]].y + ghost.Coordinates.y;
 
-        if (!isBorder && !currentEqualsPrev && !isMargin && !isPortal)
+        bool isBorder = PacManViewModel.Borders.Any(c => c.x == x2 && c.y == y2);
+        bool currentEqualsPrev = ghost.Coordinates.x == x2 && ghost.Coordinates.y == y2;
+
+        bool currentKeyEqualsPrev = oppositeDirection[ghost.PreviousKey] == allDirections[i];
+        bool isMargin = x2 < 1 || x2 >= PacManViewModel.N || y2 < 1 || y2 >= PacManViewModel.M;
+        bool isPortal = x2 == PacManViewModel.N / 2 - 1 && (y2 <= 4 || y2 >= PacManViewModel.M - 4);
+
+        bool isBidirectionalLine = ghost.Coordinates.x == 14 && ghost.Coordinates.y == 6 && allDirections[i] == Key.Left ||
+           ghost.Coordinates.x == 14 && ghost.Coordinates.y == 21 && allDirections[i] == Key.Right;
+        if (!isBorder && !currentEqualsPrev && !currentKeyEqualsPrev && !isMargin && !isPortal && !isBidirectionalLine)
         {
-          indexList.Add(i);
+          availableDirections.Add(allDirections[i]);
         }
       }
 
       var rand = new Random();
-      var list2 = new List<int>(indexList);
-      bool ghostMoved = false;
-      var coord = new Coordinates(PacManViewModel.GetGhostCoordinates(ghost));
-      while (indexList.Any() && !ghostMoved)
-      {
-        int index = rand.Next(indexList.Count());
-        coord.x += x[indexList[index]];
-        coord.y += y[indexList[index]];
-        indexList.Remove(index);
 
-        SetPrevCoordinates(new Coordinates(PacManViewModel.GetGhostCoordinates(ghost)), ghost);
-        PacManViewModel.HideGhost(ghost);
-        PacManViewModel.SetCoordinatesToGhost(new Coordinates(coord), ghost);
-        PacManViewModel.SetGhost(ghost);
+      bool ghostMoved = false;
+      if (!availableDirections.Any())
+      {
+        timer.Stop();
+        int bkp = 2;
+      }
+      if (availableDirections.Any())
+      {
+        int index = RandomNumber(0, availableDirections.Count());
+        var key = availableDirections[index];
+
+        PacManViewModel.MoveGhost(key, ghost);
+        ghost.PreviousKey = key;
         ghostMoved = true;
-        break;
       }
       if (ghostMoved == false)
       {
@@ -108,112 +153,59 @@ namespace PacMan
       }
     }
 
-    private Coordinates GetPrevCoordinates(int ghost)
-    {
-      if (ghost == 0)
-      {
-        return BluePreviousCoordinates;
-      }
-      else if (ghost == 1)
-      {
-        return OrangePreviousCoordinates;
-      }
-      else if (ghost == 2)
-      {
-        return PinkPreviousCoordinates;
-      }
-      else if (ghost == 3)
-      {
-        return RedPreviousCoordinates;
-      }
-      return null;
-    }
-    private void SetPrevCoordinates(Coordinates c, int ghost)
-    {
-      c = new Coordinates(c);
-      if (ghost == 0)
-      {
-        BluePreviousCoordinates = c;
-      }
-      else if (ghost == 1)
-      {
-        OrangePreviousCoordinates = c;
-      }
-      else if (ghost == 2)
-      {
-        PinkPreviousCoordinates = c;
-      }
-      else if (ghost == 3)
-      {
-        RedPreviousCoordinates = c;
-      }
-    }
-
     private void MovePacman()
     {
-      if (LastKey == Key.Down)
+      if (CurrentKey == Key.None)
       {
-        PacManViewModel.MoveCurrentSquareDown();
+        return;
       }
-      if (LastKey == Key.Right)
+
+      if (!PacManViewModel.MovePacman(CurrentKey))
       {
-        PacManViewModel.MoveCurrentSquareToRight();
+        PacManViewModel.MovePacman(LastKey);
       }
-      if (LastKey == Key.Up)
+      else
       {
-        PacManViewModel.MoveCurrentSquareUp();
+        LastKey = CurrentKey;
       }
-      if (LastKey == Key.Left)
-      {
-        PacManViewModel.MoveCurrentSquareToLeft();
+
+    }
+
+    //Function to get a random number 
+    private static readonly Random random = new Random();
+    private static readonly object syncLock = new object();
+    public static int RandomNumber(int min, int max)
+    {
+      lock (syncLock)
+      { // synchronize
+        return random.Next(min, max);
       }
     }
 
     private void Window_OnKeyDown(object sender, KeyEventArgs e)
     {
-      if (LastKey == Key.None)
+      if (CurrentKey == Key.None)
       {
-        LastKey = e.Key;
-        PacManViewModel.HideGhost(0);
-        PacManViewModel.HideGhost(1);
-        PacManViewModel.HideGhost(2);
-        PacManViewModel.HideGhost(3);
+        int i = 0;
+        foreach (var ghost in PacManViewModel.Ghosts)
+        {
+          PacManViewModel.Clear(ghost.Coordinates);
+          ghost.Coordinates = new Coordinates(11, 10 + i);
+          i += 2;
+        }
 
-        PacManViewModel.SetCoordinatesToGhost(new Coordinates(11, 10), 0);
-        PacManViewModel.SetCoordinatesToGhost(new Coordinates(11, 13), 1);
-        PacManViewModel.SetCoordinatesToGhost(new Coordinates(11, 15), 2);
-        PacManViewModel.SetCoordinatesToGhost(new Coordinates(11, 17), 3);
-
-        PacManViewModel.SetGhost(0);
-        PacManViewModel.SetGhost(1);
-        PacManViewModel.SetGhost(2);
-        PacManViewModel.SetGhost(3);
-
+        Helper.SoundPlayerHelper.PlaySound("beginning");
+        System.Threading.Thread.Sleep(5000);
+        soundTimer.Start();
         timer.Start();
       }
-      var coord = new Coordinates(PacManViewModel.CurrentSquare.Line, PacManViewModel.CurrentSquare.Column);
-      if (e.Key == Key.Down)
+      if (directionOffset.ContainsKey(e.Key))
       {
-        coord.x++;
+        CurrentKey = e.Key;
       }
-      if (e.Key == Key.Right)
-      {
-        coord.y++;
-      }
-      if (e.Key == Key.Up)
-      {
-        coord.x--;
-      }
-      if (e.Key == Key.Left)
-      {
-        coord.y--;
-      }
-      if (PacManViewModel.Borders.Any(c => c.x == coord.x && c.y == coord.y))
-      {
-        return;
-      }
-      LastKey = e.Key;
     }
+
+
 
 
   }

@@ -1,36 +1,23 @@
-﻿using PacMan.Model;
-using Prism.Commands;
-using System;
+﻿using PacMan.Constants;
+using PacMan.Model;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Timers;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Threading;
 
 namespace PacMan.ViewModel
 {
   class PacManViewModel : INotifyPropertyChanged
   {
-    Thickness BorderLeft = new Thickness(3, 0, 0, 0);
-    Thickness BorderUp = new Thickness(0, 3, 0, 0);
-    Thickness BorderRight = new Thickness(0, 0, 3, 0);
-    Thickness BorderDown = new Thickness(0, 0, 0, 3);
-
     Thickness BorderUpLeft = new Thickness(3, 3, 0, 0);
     Thickness BorderUpRight = new Thickness(0, 3, 3, 0);
     Thickness BorderDownLeft = new Thickness(3, 0, 0, 3);
     Thickness BorderDownRight = new Thickness(0, 0, 3, 3);
-    string blueGhost = "pack://application:,,,/PacMan;component/Resources/blue_ghost.png";
-    string redGhost = "pack://application:,,,/PacMan;component/Resources/red_ghost.png";
-    string orangeGhost = "pack://application:,,,/PacMan;component/Resources/orange_ghost.png";
-    string pinkGhost = "pack://application:,,,/PacMan;component/Resources/pink_ghost.png";
-
 
     public Coordinates BlueGhostCoordinates = new Coordinates(14, 12);
     public Coordinates RedGhostCoordinates = new Coordinates(14, 13);
@@ -39,9 +26,15 @@ namespace PacMan.ViewModel
 
     public int N = 30;
     public int M = 27;
+
+    private int defaultHeight = 30;
+    private int defaultWidth = 30;
+
     private int cornerRadiusValue = 10;
     private int borderThicknessValue = 5;
     private int exteriorSquaresSize = 15; // double border thickness
+
+    private ObservableCollection<ObservableCollection<Square>> _board;
     public ObservableCollection<ObservableCollection<Square>> Board
     {
       get { return _board; }
@@ -55,113 +48,54 @@ namespace PacMan.ViewModel
 
     }
 
-    internal void HideGhost(int ghost)
+    private List<int> _lives;
+    public List<int> Lives
     {
-      if (ghost == 0)
+      get { return _lives; }
+
+      set
       {
-        Board[GetGhostCoordinates(ghost).x][GetGhostCoordinates(ghost).y].BlueGhostVisibility = Visibility.Hidden;
+        if (_lives == value) return;
+        _lives = value;
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Lives"));
       }
-      else if (ghost == 1)
+
+    }
+
+    private List<string> _level;
+    public List<string> Level
+    {
+      get { return _level; }
+
+      set
       {
-        Board[GetGhostCoordinates(ghost).x][GetGhostCoordinates(ghost).y].OrangeGhostVisibility = Visibility.Hidden;
-      }
-      else if (ghost == 2)
-      {
-        Board[GetGhostCoordinates(ghost).x][GetGhostCoordinates(ghost).y].PinkGhostVisibility = Visibility.Hidden;
-      }
-      else if (ghost == 3)
-      {
-        Board[GetGhostCoordinates(ghost).x][GetGhostCoordinates(ghost).y].RedGhostVisibility = Visibility.Hidden;
+        if (_level == value) return;
+        _level = value;
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Level"));
       }
     }
 
-    internal void SetCoordinatesToGhost(Coordinates coord, int ghost)
-    {
-      if (ghost == 0)
-      {
-        BlueGhostCoordinates = coord;
-      }
-      else if (ghost == 1)
-      {
-        OrangeGhostCoordinates = coord;
-      }
-      else if (ghost == 2)
-      {
-        PinkGhostCoordinates = coord;
-      }
-      else if (ghost == 3)
-      {
-        RedGhostCoordinates = coord;
-      }
-    }
 
-    internal Coordinates GetGhostCoordinates(int ghost)
-    {
-      if (ghost == 0)
-      {
-        return BlueGhostCoordinates;
-      }
-      else if (ghost == 1)
-      {
-        return OrangeGhostCoordinates;
-      }
-      else if (ghost == 2)
-      {
-        return PinkGhostCoordinates;
-      }
-      else if (ghost == 3)
-      {
-        return RedGhostCoordinates;
-      }
-      return null;
-    }
-
-    public void SetGhost(int ghost)
-    {
-      if (ghost == 0)
-      {
-        SetBlueGhost(BlueGhostCoordinates);
-      }
-      else if (ghost == 1)
-      {
-        SetOrangeGhost(OrangeGhostCoordinates);
-      }
-      else if (ghost == 2)
-      {
-        SetPinkGhost(PinkGhostCoordinates);
-      }
-      else if (ghost == 3)
-      {
-        SetRedGhost(RedGhostCoordinates);
-      }
-    }
-
-    public Square CurrentSquare;
-
+    public Coordinates PacManCoordinates { get; set; }
+    public List<Ghost> Ghosts { get; set; }
     public ICommand NewGameCommand { get; set; }
-    public ICommand GetSolutionCommand { get; set; }
-    public ICommand ClearSolutionCommand { get; set; }
-    public ICommand ImportSudokuCommand { get; set; }
-    public ICommand ImportCommand { get; set; }
-    public ICommand AutoCheckCommand { get; set; }
+    public ICommand MenuCommand { get; set; }
+    public ICommand ContinueGameCommand { get; set; }
+    public Dictionary<Key, Coordinates> DirectionOffset { get; internal set; }
+    public Timer Timer { get; internal set; }
+    public bool PacmanHasChomped { get; set; }
+    public bool Death { get; internal set; } = false;
+    public Label GameOver { get; internal set; }
 
-
-    private ObservableCollection<ObservableCollection<Square>> _board;
-    private List<List<int>> intMatrix;
-    private List<List<int>> solutionMatrix;
-    private List<List<int>> initialSudoku;
-    private Square _selectedSquare;
-    private int intialIndex;
     public event PropertyChangedEventHandler PropertyChanged;
 
     public PacManViewModel()
     {
       InitializeBoard();
-
     }
 
-
     public HashSet<Coordinates> Borders = new HashSet<Coordinates>();
+
     private void InitializeBoard()
     {
       Board = new ObservableCollection<ObservableCollection<Square>>();
@@ -172,8 +106,9 @@ namespace PacMan.ViewModel
         for (int j = 0; j <= M; j++)
         {
           var borderThickness = new Thickness(0, 0, 0, 0);
-          var circleVisibility = Visibility.Hidden;
-          int height = 30, width = 30;
+          int height = defaultHeight;
+          int width = defaultWidth;
+
           bool isBorder = false;
           CornerRadius radius = new CornerRadius();
           if (i == 0 && j == 0)
@@ -233,14 +168,10 @@ namespace PacMan.ViewModel
             width = exteriorSquaresSize;
             isBorder = true;
           }
-          else
-          {
-            circleVisibility = Visibility.Visible;
-          }
 
           if (isBorder)
           {
-            if (!(i== 14 && (j == 0 ||j == 1 || j == M || j == M - 1)))
+            if (!(i == 14 && (j == 0 || j == 1 || j == M || j == M - 1)))
             {
               Borders.Add(new Coordinates(i, j));
             }
@@ -248,45 +179,211 @@ namespace PacMan.ViewModel
 
           list.Add(new Square
           {
-            Line = i,
-            Column = j,
+            IsBorder = isBorder,
+            Coordinates = new Coordinates(i, j),
             Height = height,
             Width = width,
             CornerRadius = radius,
-            YellowDotVisibility = circleVisibility,
+            DotImage = isBorder ? ImagesConstants.EmptyImage : ImagesConstants.DotImage,
             BorderThickness = borderThickness
-          }); ;
+          });
         }
 
         Board.Add(list);
       }
-      SetYellowDot(3, 1);
-      SetRedGhost(RedGhostCoordinates);
-      SetBlueGhost(BlueGhostCoordinates);
-      SetOrangeGhost(OrangeGhostCoordinates);
-      SetPinkGhost(PinkGhostCoordinates);
-      SetYellowDot(3, 1);
-      SetYellowDot(3, 26);
-      SetYellowDot(23, 1);
-      SetYellowDot(23, 26);
 
-      //1st Rectangle, First line
-      SetBorder(2, 2, 2, 3);
-      //2nd Rectangle, First line
-      SetBorder(2, 7, 2, 4);
+      SetBiggerDots();
 
-      //Vertical Line, First Line
-      SetBorder(1, 13, 3, 1);
-      VerticalAlign(0, 13, 1, 13);
-      VerticalAlign(0, 14, 1, 14);
+      SetFirstBoardRegion();
+      SetSecondBoardRegion();
+      SetCenterBoardRegion();
+      SetFourthBoardRegion();
+      SetFifthBoardRegion();
 
-      //3rd Rectangle, First line
-      SetBorder(2, 16, 2, 4);
-      //4th Rectangle, First line
-      SetBorder(2, 22, 2, 3);
+      //Make the line 14 bidirectional
+      MakeTheCenterLineBidirectional();
+      //Borders = Borders.Remove(c => !(c.x == 14 && (c.y == 0 || c.y == 1 || c.y == M || c.y == M - 1)));
 
-      //---------------------
+      RemoveAdditionalDots();
 
+      SetPacmanCurrentSquare();
+      SetCenterBorder();
+
+      AddGhosts();
+      PlaceGhosts();
+      AddLives();
+      SetLevel();
+    }
+
+    private void SetLevel()
+    {
+      Level = new List<string>();
+      Level.Add(ImagesConstants.CherryImage);
+    }
+
+    private void AddLives()
+    {
+      Lives = new List<int>();
+      for (int i = 0; i < 3; i++)
+      {
+        Lives.Add(i);
+      }
+    }
+
+    private void SetCenterBorder()
+    {
+      Board[12][13].BorderBrush = Brushes.White;
+      Board[12][14].BorderBrush = Brushes.White;
+    }
+
+
+    internal void Clear(Coordinates coordinates)
+    {
+      Board[coordinates.x][coordinates.y].Image = ImagesConstants.EmptyImage;
+    }
+
+    private void AddGhosts()
+    {
+      Ghosts = new List<Ghost>();
+      Ghosts.Add(new Ghost
+      {
+        Coordinates = new Coordinates(14, 12),
+        Image = ImagesConstants.blueGhostImage
+      });
+
+      Ghosts.Add(new Ghost
+      {
+        Coordinates = new Coordinates(14, 13),
+        Image = ImagesConstants.pinkGhostImage
+      });
+
+      Ghosts.Add(new Ghost
+      {
+        Coordinates = new Coordinates(14, 14),
+        Image = ImagesConstants.redGhostImage
+      });
+
+      Ghosts.Add(new Ghost
+      {
+        Coordinates = new Coordinates(14, 15),
+        Image = ImagesConstants.orangeGhostImage
+      });
+    }
+
+    private void PlaceGhosts()
+    {
+      foreach (var ghost in Ghosts)
+      {
+        Board[ghost.Coordinates.x][ghost.Coordinates.y].Image = ghost.Image;
+      }
+    }
+
+    private void SetCenterBoardRegion()
+    {
+      // Left Border
+      SetBorder(9, 1, 4, 4, 1);
+      // Right Border
+      SetBorder(9, 22, 4, 4, 1);
+
+      // Left Border
+      SetBorder(15, 1, 4, 4, 1);
+      // Right Border
+      SetBorder(15, 22, 4, 4, 1);
+
+      //Center
+      SetBorder(12, 10, 4, 7);
+    }
+
+    private void SetFourthBoardRegion()
+    {
+      //// Bottom Left 
+      SetBorder(15, 7, 4, 1); // vertical
+
+      // Bottom center "T shape"
+      SetBorder(18, 10, 1, 7); // horizontal
+      SetBorder(20, 13, 2, 1); // vertical
+      VerticalAlign(19, 13, 20, 13);
+      VerticalAlign(19, 14, 20, 14);
+
+      // Bottom Right
+      SetBorder(15, 19, 4, 1);// vertical
+      SetBorder(21, 16, 1, 4);//horizontal
+
+      //Bottom Left 
+      SetBorder(21, 7, 1, 4); //horizontal
+
+      //Bottom Left "T" shape
+      SetBorder(21, 2, 1, 3);
+      SetBorder(23, 4, 2, 1);//vertical
+      VerticalAlign(22, 4, 23, 4);
+      VerticalAlign(22, 5, 23, 5);
+
+      // Bottom Right "T" shape
+      SetBorder(21, 22, 1, 3);
+      SetBorder(23, 22, 2, 1);
+      VerticalAlign(22, 22, 23, 22);
+      VerticalAlign(22, 23, 23, 23);
+
+      // Left Border
+      SetBorder(24, 1, 1, 1, 1);
+      // Right Border
+      SetBorder(24, 25, 1, 1, 1);
+    }
+
+    private void SetFifthBoardRegion()
+    {
+      //Bottom Left "T" shape
+      SetBorder(27, 2, 1, 9);
+      SetBorder(24, 7, 2, 1);//vertical
+      VerticalAlign(26, 7, 27, 7);
+      VerticalAlign(26, 8, 27, 8);
+
+      // Bottom center "T shape"
+      SetBorder(24, 10, 1, 7); // horizontal
+      SetBorder(26, 13, 2, 1); // vertical
+      VerticalAlign(25, 13, 26, 13);
+      VerticalAlign(25, 14, 26, 14);
+
+      //Bottom Right "T" shape
+      SetBorder(27, 16, 1, 9);
+      SetBorder(24, 19, 2, 1);//vertical
+      VerticalAlign(26, 19, 27, 19);
+      VerticalAlign(26, 20, 27, 20);
+    }
+
+    private void RemoveAdditionalDots()
+    {
+      for (int i = 0; i <= M; i++)
+      {
+        if (i != 6 && i != 21)
+        {
+          Board[N / 2 - 1][i].DotImage = ImagesConstants.EmptyImage;
+        }
+      }
+
+      Board[N / 2 - 1][M - 1].DotImage = ImagesConstants.EmptyImage;
+
+      Board[9][12].DotImage = ImagesConstants.EmptyImage;
+      Board[10][12].DotImage = ImagesConstants.EmptyImage;
+
+      Board[9][15].DotImage = ImagesConstants.EmptyImage;
+      Board[10][15].DotImage = ImagesConstants.EmptyImage;
+
+      for (int i = 0; i < 10; i++)
+      {
+        Board[11][9 + i].DotImage = ImagesConstants.EmptyImage;
+        Board[17][9 + i].DotImage = ImagesConstants.EmptyImage;
+      }
+
+      for (int i = 0; i < 9; i++)
+      {
+        Board[11 + i][9].DotImage = ImagesConstants.EmptyImage;
+        Board[11 + i][18].DotImage = ImagesConstants.EmptyImage;
+      }
+    }
+
+    private void SetSecondBoardRegion()
+    {
       //Left Rectangle, 2nd line
       SetBorder(6, 2, 1, 3);
 
@@ -311,139 +408,38 @@ namespace PacMan.ViewModel
       HorizontalAlign(9, 18, 9, 19);
       HorizontalAlign(10, 18, 10, 19);
 
-      //Make the line 14 bidirectional
-      MakeTheCenterLineBidirectional();
-
-      for (int i = 0; i <= M; i++)
-      {
-        if (i != 6 && i != 21)
-        {
-          Board[N / 2 - 1][i].YellowDotVisibility = Visibility.Hidden;
-        }
-      }
-
-      Board[N / 2 - 1][M - 1].YellowDotVisibility = Visibility.Hidden;
-
-      Board[9][12].YellowDotVisibility = Visibility.Hidden;
-      Board[10][12].YellowDotVisibility = Visibility.Hidden;
-
-      Board[9][15].YellowDotVisibility = Visibility.Hidden;
-      Board[10][15].YellowDotVisibility = Visibility.Hidden;
-
-      for (int i = 0; i < 10; i++)
-      {
-        Board[11][9 + i].YellowDotVisibility = Visibility.Hidden;
-        Board[17][9 + i].YellowDotVisibility = Visibility.Hidden;
-      }
-
-      for (int i = 0; i < 9; i++)
-      {
-        Board[11 + i][9].YellowDotVisibility = Visibility.Hidden;
-        Board[11 + i][18].YellowDotVisibility = Visibility.Hidden;
-      }
-
-      //Borders = Borders.Remove(c => !(c.x == 14 && (c.y == 0 || c.y == 1 || c.y == M || c.y == M - 1)));
-
-      // Left Border
-      SetBorder(9, 1, 4, 4, 1);
-      // Right Border
-      SetBorder(9, 22, 4, 4, 1);
-
-      // Left Border
-      SetBorder(15, 1, 4, 4, 1);
-      // Right Border
-      SetBorder(15, 22, 4, 4, 1);
-
-      //Center
-      SetBorder(12, 10, 4, 7);
-
-      //// Bottom Left 
-      SetBorder(15, 7, 4, 1); // vertical
-
-      // Bottom center "T shape"
-      SetBorder(18, 10, 1, 7); // horizontal
-      SetBorder(20, 13, 2, 1); // vertical
-      VerticalAlign(19, 13, 20, 13);
-      VerticalAlign(19, 14, 20, 14);
-
-      // Bottom Right
-      SetBorder(15, 19, 4, 1);// vertical
-      SetBorder(21, 16, 1, 4);//horizontal
-
-
-      //Bottom Left 
-      SetBorder(21, 7, 1, 4); //horizontal
-
-      //Bottom Left "T" shape
-      SetBorder(21, 2, 1, 3);
-      SetBorder(23, 4, 2, 1);//vertical
-      VerticalAlign(22, 4, 23, 4);
-      VerticalAlign(22, 5, 23, 5);
-
-      // Bottom Right "T" shape
-      SetBorder(21, 22, 1, 3);
-      SetBorder(23, 22, 2, 1);
-      VerticalAlign(22, 22, 23, 22);
-      VerticalAlign(22, 23, 23, 23);
-
-      //Bottom Left "T" shape
-      SetBorder(27, 2, 1, 9);
-      SetBorder(24, 7, 2, 1);//vertical
-      VerticalAlign(26, 7, 27, 7);
-      VerticalAlign(26, 8, 27, 8);
-
-      // Bottom center "T shape"
-      SetBorder(24, 10, 1, 7); // horizontal
-      SetBorder(26, 13, 2, 1); // vertical
-      VerticalAlign(25, 13, 26, 13);
-      VerticalAlign(25, 14, 26, 14);
-
-      //Bottom Right "T" shape
-      SetBorder(27, 16, 1, 9);
-      SetBorder(24, 19, 2, 1);//vertical
-      VerticalAlign(26, 19, 27, 19);
-      VerticalAlign(26, 20, 27, 20);
-
-      // Left Border
-      SetBorder(24, 1, 1, 1, 1);
-      // Right Border
-      SetBorder(24, 25, 1, 1, 1);
-
-      CurrentSquare = SetCurrentSquare(Board[23][M / 2 + 1]);
     }
 
-    //private void SetGhost(int x, int y, string ghost)
-    //{
-    //  Board[x][y].ImageVisibility = ghost;
-    //} 
-    public void SetRedGhost(Coordinates c)
+    private void SetFirstBoardRegion()
     {
-      RedGhostCoordinates = c;
-      Board[c.x][c.y].RedGhostVisibility = Visibility.Visible;
+      //1st Rectangle, First line
+      SetBorder(2, 2, 2, 3);
+      //2nd Rectangle, First line
+      SetBorder(2, 7, 2, 4);
+
+      //Vertical Line, First Line
+      SetBorder(1, 13, 3, 1);
+      VerticalAlign(0, 13, 1, 13);
+      VerticalAlign(0, 14, 1, 14);
+
+      //3rd Rectangle, First line
+      SetBorder(2, 16, 2, 4);
+      //4th Rectangle, First line
+      SetBorder(2, 22, 2, 3);
+
     }
 
-    public void SetBlueGhost(Coordinates c)
+    private void SetBiggerDots()
     {
-      BlueGhostCoordinates = c;
-      Board[c.x][c.y].BlueGhostVisibility = Visibility.Visible;
+      SetBiggerDot(3, 1);
+      SetBiggerDot(3, 26);
+      SetBiggerDot(23, 1);
+      SetBiggerDot(23, 26);
     }
 
-    public void SetOrangeGhost(Coordinates c)
+    private void SetBiggerDot(int v1, int v2)
     {
-      OrangeGhostCoordinates = c;
-      Board[c.x][c.y].OrangeGhostVisibility = Visibility.Visible;
-    }
-
-    public void SetPinkGhost(Coordinates c)
-    {
-      PinkGhostCoordinates = c;
-      Board[c.x][c.y].PinkGhostVisibility = Visibility.Visible;
-    }
-
-    private void SetYellowDot(int x, int y)
-    {
-      Board[x][y].YellowDotSize = 15;
-      Board[x][y].YellowDotRadius = 7.5;
+      Board[v1][v2].DotImage = ImagesConstants.bigDotImage;
     }
 
     private void MakeTheCenterLineBidirectional()
@@ -481,7 +477,7 @@ namespace PacMan.ViewModel
         for (int j = y; j <= y + width; j++)
         {
           Borders.Add(new Coordinates(i, j));
-          Board[i][j].YellowDotVisibility = Visibility.Hidden;
+          Board[i][j].DotImage = ImagesConstants.EmptyImage;
           Thickness thickness = new Thickness();
           CornerRadius radius = new CornerRadius();
 
@@ -544,99 +540,101 @@ namespace PacMan.ViewModel
       }
     }
 
-    private Square SetCurrentSquare(Square square)
+    private void SetPacmanCurrentSquare()
     {
-      square.PacmanVisibility = Visibility.Visible;
-      square.YellowDotVisibility = Visibility.Hidden;
-      return square;
+      PacManCoordinates = new Coordinates(23, M / 2 + 1);
+      Board[PacManCoordinates.x][PacManCoordinates.y].Image = ImagesConstants.PacmanImage;
     }
 
 
-
-    public void MoveCurrentSquareToRight()
+    public bool MovePacman(Key key)
     {
-      if (CurrentSquare.Line == 14 && CurrentSquare.Column == M - 1)
-      {
-        CurrentSquare.Column = 1;
-      }
-      if (Borders.Any(c => c.x == CurrentSquare.Line && c.y == CurrentSquare.Column + 1) ||
-        CurrentSquare.Column >= M - 1)
-      {
-        return;
-      }
-      ClearCurrentSquare();
-      SetNewSquare(CurrentSquare.Line, CurrentSquare.Column + 1, 0);
-    }
+      var coord = new Coordinates(DirectionOffset[key]);
+      var nextMove = new Coordinates(PacManCoordinates.x + coord.x, PacManCoordinates.y + coord.y);
 
+      var isBidirectionalLine = PacManCoordinates.x == 14 && (PacManCoordinates.y == 1 || PacManCoordinates.y == M - 1);
+      var isCenterBorder = PacManCoordinates.x == 11 && (PacManCoordinates.y == 13 || PacManCoordinates.y == 14) &&
+        (key == Key.Down);
 
-    public void MoveCurrentSquareDown()
-    {
-      if (Borders.Any(c => c.x == CurrentSquare.Line + 1 && c.y == CurrentSquare.Column) ||
-        CurrentSquare.Line >= N - 1)
+      if (isBidirectionalLine)
       {
-        return;
-      }
-      ClearCurrentSquare();
-      SetNewSquare(CurrentSquare.Line + 1, CurrentSquare.Column, 90);
-    }
-
-    public void MoveCurrentSquareToLeft()
-    {
-      if (CurrentSquare.Line == 14 && CurrentSquare.Column == 1)
-      {
-        CurrentSquare.Column = M - 1;
+        if (PacManCoordinates.y == 1 && key == Key.Left)
+        {
+          nextMove.y = M - 1;
+        }
+        else if (PacManCoordinates.y == M - 1 && key == Key.Right)
+        {
+          nextMove.y = 1;
+        }
       }
 
-      if (Borders.Any(c => c.x == CurrentSquare.Line && c.y == CurrentSquare.Column - 1) ||
-        CurrentSquare.Column <= 1)
+      if (Borders.Any(c => c.x == nextMove.x && c.y == nextMove.y) && !isBidirectionalLine && !isCenterBorder ||
+        nextMove.x < 1 || nextMove.x >= N ||
+         nextMove.y < 1 || nextMove.y >= M)
       {
-        return;
+        return false;
       }
-      ClearCurrentSquare();
-      SetNewSquare(CurrentSquare.Line, CurrentSquare.Column - 1, 180);
+
+
+      Board[PacManCoordinates.x][PacManCoordinates.y].Image = ImagesConstants.EmptyImage;
+      PacmanHasChomped = Board[PacManCoordinates.x][PacManCoordinates.y].DotImage == ImagesConstants.DotImage;
+      Board[PacManCoordinates.x][PacManCoordinates.y].DotImage = ImagesConstants.EmptyImage;
+      Board[PacManCoordinates.x][PacManCoordinates.y].ImageAngle = 0;
+      PacManCoordinates = nextMove;
+      Board[PacManCoordinates.x][PacManCoordinates.y].Image = ImagesConstants.PacmanImage;
+      SetPacmanAngle(key);
+      return true;
     }
 
-    public void MoveCurrentSquareUp()
+    public bool MoveGhost(Key key, Ghost ghost)
     {
-      if (Borders.Any(c => c.x == CurrentSquare.Line - 1 && c.y == CurrentSquare.Column) ||
-        CurrentSquare.Line <= 1)
+      var offset = new Coordinates(DirectionOffset[key]);
+      var nextMove = new Coordinates(ghost.Coordinates.x + offset.x, ghost.Coordinates.y + offset.y);
+      if (Borders.Any(c => c.x == nextMove.x && c.y == nextMove.y) ||
+        nextMove.x < 1 || nextMove.x >= N ||
+         nextMove.y < 1 || nextMove.y >= M)
       {
-        return;
+        return false;
       }
-      ClearCurrentSquare();
-      SetNewSquare(CurrentSquare.Line - 1, CurrentSquare.Column, 270);
-    }
 
-    private void SetNewSquare(int line, int column, int angle)
-    {
-      var newCurrentSquare = new Square
+      Board[ghost.Coordinates.x][ghost.Coordinates.y].Image = ImagesConstants.EmptyImage;
+      ghost.Coordinates = nextMove;
+      Board[ghost.Coordinates.x][ghost.Coordinates.y].Image = ghost.Image;
+      if (ghost.Coordinates == PacManCoordinates)
       {
-        Line = line,
-        Column = column
-      };
-      Dispatcher.CurrentDispatcher.BeginInvoke(new Action(() =>
-      {
-        Board[line][column] = newCurrentSquare;
-      }));
-      CurrentSquare = Board[line][column];
-      CurrentSquare.PacmanVisibility = Visibility.Visible;
-      CurrentSquare.Angle = angle;
-      CurrentSquare.YellowDotVisibility = Visibility.Hidden;
+        Helper.SoundPlayerHelper.PlaySound("death");
+        Timer.Stop();
+        Board[ghost.Coordinates.x][ghost.Coordinates.y].ImageAngle = 0;
+        //DeathEvent?.Invoke();
+        Death = true;
+        GameOver.Visibility = Visibility.Visible;
+        return false;
+      }
+
+      return true;
     }
 
-    private void ClearCurrentSquare()
+    private void SetPacmanAngle(Key key)
     {
-      CurrentSquare.PacmanVisibility = Visibility.Hidden;
+      if (key == Key.Up)
+      {
+        Board[PacManCoordinates.x][PacManCoordinates.y].ImageAngle = 270;
+      }
+      if (key == Key.Down)
+      {
+        Board[PacManCoordinates.x][PacManCoordinates.y].ImageAngle = 90;
+      }
+      if (key == Key.Left)
+      {
+        Board[PacManCoordinates.x][PacManCoordinates.y].ImageAngle = 180;
+      }
     }
-
-
   }
 
   public class Coordinates
   {
     public int x;
     public int y;
-
     public Coordinates(Coordinates coordinates)
     {
       x = coordinates.x;
@@ -647,6 +645,15 @@ namespace PacMan.ViewModel
     {
       this.x = x;
       this.y = y;
+    }
+    public static bool operator ==(Coordinates a, Coordinates b)
+    {
+      return a.x == b.x && a.y == b.y;
+    }
+
+    public static bool operator !=(Coordinates a, Coordinates b)
+    {
+      return a.x != b.x || a.y != b.y;
     }
   }
 }

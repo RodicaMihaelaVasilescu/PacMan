@@ -5,113 +5,53 @@ using System.Windows.Media;
 using System.ComponentModel;
 using System.Windows;
 using System;
+using PacMan.ViewModel;
+using PacMan.Constants;
 
 namespace PacMan.Model
 {
 
   public class Square : INotifyPropertyChanged
   {
+    public bool IsBorder = false;
     private string _selectedSquare;
-    private int _angle;
-    private Visibility _blueGhostVisibility = Visibility.Hidden;
-    private Visibility _orangeGhostVisibility = Visibility.Hidden;
-    private Visibility _pinkGhostVisibility = Visibility.Hidden;
-    private Visibility _redGhostVisibility = Visibility.Hidden;
+    private int _imageAngle;
+    private string _image = ImagesConstants.EmptyImage;
+    private string _dotIimage;
 
+    public double YellowDotSize { get; set; } = 5;
     public double YellowDotRadius { get; set; } = 0;
     public double Width { get; set; } = 15;
     public double Height { get; set; } = 15;
-    public double YellowDotSize { get; set; } = 5;
-    public int Line { get; set; }
-    public int Column { get; set; }
+    public Coordinates Coordinates { get; set; }
     public int Tag { get; set; }
     public Brush Background { get; set; } = Brushes.Black;
-    private Visibility _pacmanVisibility = Visibility.Hidden;
-    public Visibility PacmanVisibility
+    public Brush BorderBrush { get; set; } = Brushes.DarkBlue;
+
+    public string Image
     {
-      get { return _pacmanVisibility; }
+      get { return _image; }
 
       set
       {
-        if (_pacmanVisibility == value) return;
-        _pacmanVisibility = value;
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("PacmanVisibility"));
+        if (_image == value) return;
+        _image = value;
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Image"));
       }
     }
 
-    public Visibility BlueGhostVisibility
+    public string DotImage
     {
-      get { return _blueGhostVisibility; }
+      get { return _dotIimage; }
 
       set
       {
-        if (_blueGhostVisibility == value) return;
-        _blueGhostVisibility = value;
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("BlueGhostVisibility"));
+        if (_dotIimage == value) return;
+        _dotIimage = value;
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("DotImage"));
       }
     }
 
-    public Visibility OrangeGhostVisibility
-    {
-      get { return _orangeGhostVisibility; }
-
-      set
-      {
-        if (_orangeGhostVisibility == value) return;
-        _orangeGhostVisibility = value;
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("OrangeGhostVisibility"));
-      }
-    }
-
-    public Visibility PinkGhostVisibility
-    {
-      get { return _pinkGhostVisibility; }
-
-      set
-      {
-        if (_pinkGhostVisibility == value) return;
-        _pinkGhostVisibility = value;
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("PinkGhostVisibility"));
-      }
-    }
-
-    public Visibility RedGhostVisibility
-    {
-      get { return _redGhostVisibility; }
-
-      set
-      {
-        if (_redGhostVisibility == value) return;
-        _redGhostVisibility = value;
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("RedGhostVisibility"));
-      }
-    }
-
-    private string imageVisibility { get; set; } = null;
-    public string ImageVisibility
-    {
-      get { return imageVisibility; }
-
-      set
-      {
-        if (imageVisibility == value) return;
-        imageVisibility = value;
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("ImageVisibility"));
-      }
-    }
-
-    public Visibility _yellowDotVisibility { get; set; } = Visibility.Visible;
-    public Visibility YellowDotVisibility
-    {
-      get { return _yellowDotVisibility; }
-
-      set
-      {
-        if (_yellowDotVisibility == value) return;
-        _yellowDotVisibility = value;
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("YellowDotVisibility"));
-      }
-    }
 
     public Thickness BorderThickness { get; set; } = new Thickness();
     public Thickness Margin { get; set; } = new Thickness();
@@ -135,16 +75,15 @@ namespace PacMan.Model
 
     }
 
-    public int Angle
+    public int ImageAngle
     {
-      get { return _angle; }
+      get { return _imageAngle; }
 
       set
       {
-        if (_angle == value) return;
-        //NumberChanged?.Invoke(this, value);
-        _angle = value;
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("Angle"));
+        if (_imageAngle == value) return;
+        _imageAngle = value;
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("ImageAngle"));
       }
     }
     public bool IsReadOnly { get; set; } = false;

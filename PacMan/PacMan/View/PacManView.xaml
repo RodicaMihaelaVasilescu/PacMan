@@ -65,11 +65,36 @@
   </UserControl.Resources>
 
   <Grid>
-    <ListBox
-      Name="OuterListBox"
-      Grid.Row="2"
+    <Grid.RowDefinitions>
+      <RowDefinition />
+      <RowDefinition Height="auto" />
+    </Grid.RowDefinitions>
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition />
+      <ColumnDefinition Width="auto" />
+      <ColumnDefinition />
+    </Grid.ColumnDefinitions>
+
+    <Label
+      Name="GameOver"
+      Visibility="Hidden"
+      Grid.Row="0"
+      Grid.Column="1"
       HorizontalAlignment="Center"
       VerticalAlignment="Center"
+      Panel.ZIndex="1"
+      Background="Black"
+      Content="Game over"
+      FontSize="100"
+      Foreground="red" />
+
+    <ListBox
+      Name="OuterListBox"
+      Grid.Row="0"
+      Grid.Column="1"
+      HorizontalAlignment="Center"
+      VerticalAlignment="Center"
+      Panel.ZIndex="0"
       Background="Transparent"
       BorderThickness="0"
       Focusable="False"
@@ -91,12 +116,13 @@
               </ItemsPanelTemplate>
             </ListBox.ItemsPanel>
             <ListBox.ItemTemplate>
+
               <DataTemplate>
                 <Border
                   Width="{Binding Width}"
                   Height="{Binding Height}"
                   Background="{Binding Background}"
-                  BorderBrush="DarkBlue"
+                  BorderBrush="{Binding BorderBrush}"
                   BorderThickness="{Binding BorderThickness}"
                   CornerRadius="{Binding CornerRadius}">
                   <Grid>
@@ -108,78 +134,90 @@
                       VerticalAlignment="Center"
                       Panel.ZIndex="1"
                       RenderTransformOrigin=".5,.5"
-                      Source="pack://application:,,,/PacMan;component/Resources/pacman.png"
-                      Visibility="{Binding PacmanVisibility}">
+                      Source="{Binding Image, IsAsync=True, TargetNullValue=../../Resources/dot.png}">
+
                       <Image.RenderTransform>
-                        <RotateTransform Angle="{Binding Angle}" />
+                        <RotateTransform Angle="{Binding ImageAngle}" />
                       </Image.RenderTransform>
                     </Image>
 
-
                     <Image
                       Width="30"
                       Height="30"
-                      HorizontalAlignment="Center"
-                      VerticalAlignment="Center"
-                      Panel.ZIndex="2"
-                      RenderTransformOrigin=".5,.5"
-                      Source="pack://application:,,,/PacMan;component/Resources/blue_ghost.png"
-                      Visibility="{Binding BlueGhostVisibility}" />
-
-
-                    <Image
-                      Width="30"
-                      Height="30"
-                      HorizontalAlignment="Center"
-                      VerticalAlignment="Center"
-                      Panel.ZIndex="3"
-                      RenderTransformOrigin=".5,.5"
-                      Source="pack://application:,,,/PacMan;component/Resources/orange_ghost.png"
-                      Visibility="{Binding OrangeGhostVisibility}" />
-
-
-                    <Image
-                      Width="30"
-                      Height="30"
-                      HorizontalAlignment="Center"
-                      VerticalAlignment="Center"
-                      Panel.ZIndex="4"
-                      RenderTransformOrigin=".5,.5"
-                      Source="pack://application:,,,/PacMan;component/Resources/pink_ghost.png"
-                      Visibility="{Binding PinkGhostVisibility}" />
-
-
-                    <Image
-                      Width="30"
-                      Height="30"
-                      HorizontalAlignment="Center"
-                      VerticalAlignment="Center"
-                      Panel.ZIndex="5"
-                      RenderTransformOrigin=".5,.5"
-                      Source="pack://application:,,,/PacMan;component/Resources/red_ghost.png"
-                      Visibility="{Binding RedGhostVisibility}" />
-
-
-                    <Rectangle
-                      Width="{Binding YellowDotSize}"
-                      Height="{Binding YellowDotSize}"
                       HorizontalAlignment="Center"
                       VerticalAlignment="Center"
                       Panel.ZIndex="0"
-                      Fill="#ecae8a"
-                      RadiusX="{Binding YellowDotRadius}"
-                      RadiusY="{Binding YellowDotRadius}"
-                      Visibility="{Binding YellowDotVisibility}" />
+                      RenderTransformOrigin=".5,.5"
+                      Source="{Binding DotImage, IsAsync=True, TargetNullValue=../../Resources/empty.png}">
 
+                      <Image.RenderTransform>
+                        <RotateTransform Angle="{Binding ImageAngle}" />
+                      </Image.RenderTransform>
+                    </Image>
                   </Grid>
                 </Border>
-
-
               </DataTemplate>
             </ListBox.ItemTemplate>
           </ListBox>
         </DataTemplate>
       </ListBox.ItemTemplate>
     </ListBox>
+
+    <ListBox
+      Grid.Row="1"
+      Grid.Column="1"
+      HorizontalAlignment="Left"
+      Background="Transparent"
+      BorderThickness="0"
+      ItemContainerStyle="{StaticResource NoItemHighlight}"
+      ItemsSource="{Binding Lives}">
+      <ListBox.ItemsPanel>
+        <ItemsPanelTemplate>
+          <VirtualizingStackPanel Orientation="Horizontal" />
+        </ItemsPanelTemplate>
+      </ListBox.ItemsPanel>
+      <ListBox.ItemTemplate>
+        <DataTemplate>
+          <Image
+            Width="30"
+            Height="30"
+            Margin="0,0,10,10"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            Panel.ZIndex="0"
+            RenderTransformOrigin=".5,.5"
+            Source="pack://application:,,,/PacMan;component/Resources/pacman.png" />
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+    </ListBox>
+
+    <ListBox
+      Grid.Row="1"
+      Grid.Column="1"
+      HorizontalAlignment="Right"
+      Background="Transparent"
+      BorderThickness="0"
+      ItemContainerStyle="{StaticResource NoItemHighlight}"
+      ItemsSource="{Binding Level}">
+      <ListBox.ItemsPanel>
+        <ItemsPanelTemplate>
+          <VirtualizingStackPanel Orientation="Horizontal" />
+        </ItemsPanelTemplate>
+      </ListBox.ItemsPanel>
+      <ListBox.ItemTemplate>
+        <DataTemplate>
+          <Image
+            Width="30"
+            Height="30"
+            Margin="10,0,0,10"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            Panel.ZIndex="0"
+            RenderTransformOrigin=".5,.5"
+            Source="pack://application:,,,/PacMan;component/Resources/cherry.png" />
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+    </ListBox>
+
   </Grid>
 </UserControl>

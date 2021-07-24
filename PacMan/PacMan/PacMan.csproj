@@ -36,6 +36,9 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationIcon>pacman.ico</ApplicationIcon>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="MaterialDesignColors, Version=2.0.1.2556, Culture=neutral, PublicKeyToken=df2a72020bd7962a, processorArchitecture=MSIL">
       <HintPath>..\packages\MaterialDesignColors.2.0.1\lib\net452\MaterialDesignColors.dll</HintPath>
@@ -66,7 +69,11 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Constants\ImagesConstants.cs" />
+    <Compile Include="Helper\GhostsEnum.cs" />
+    <Compile Include="Helper\SoundPlayerHelper.cs" />
     <Compile Include="Helper\Timer.cs" />
+    <Compile Include="Model\Ghost.cs" />
     <Compile Include="ViewModel\PacManViewModel.cs" />
     <Compile Include="View\PacManView.xaml.cs">
       <DependentUpon>PacManView.xaml</DependentUpon>
@@ -126,6 +133,26 @@
   </ItemGroup>
   <ItemGroup>
     <Resource Include="Resources\orange_ghost.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\dot.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\empty.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\big_dot.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\cherry.png" />
+    <Resource Include="pacman.ico" />
+    <Content Include="Resources\Sounds\pacman_beginning.wav" />
+    <Content Include="Resources\Sounds\pacman_chomp.wav" />
+    <Content Include="Resources\Sounds\pacman_death.wav" />
+    <Content Include="Resources\Sounds\pacman_eatfruit.wav" />
+    <Content Include="Resources\Sounds\pacman_eatghost.wav" />
+    <Content Include="Resources\Sounds\pacman_extrapac.wav" />
+    <Content Include="Resources\Sounds\pacman_intermission.wav" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\MaterialDesignThemes.4.1.0\build\MaterialDesignThemes.targets" Condition="Exists('..\packages\MaterialDesignThemes.4.1.0\build\MaterialDesignThemes.targets')" />
