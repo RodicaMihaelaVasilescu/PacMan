@@ -1,4 +1,4 @@
 # PacMan
-PacMan Game
+PacMan Game - WPF Application
 
 ![alt text](Demo/pacman.gif)
